@@ -43,13 +43,16 @@ cp assets/network_security_config.xml $APK_NAME/res/xml/network_security_config.
 echo "*****"
 echo Recompiling $APK_NAME into $APK_NAME_FINAL-unsigned-unaligned.apk...
 apktool b -d $APK_NAME -o $APK_NAME_FINAL-unsigned-unaligned.apk
+rm -rf $APK_NAME
 
 echo "*****"
 echo Zipaligning $APK_NAME into $APK_NAME_FINAL-unsigned.apk...
 zipalign -v -p 4 $APK_NAME_FINAL-unsigned-unaligned.apk $APK_NAME_FINAL-unsigned.apk
+rm $APK_NAME_FINAL-unsigned-unaligned.apk
 
 echo "*****"
 echo Signing $APK_NAME into $APK_NAME_FINAL.apk...
 echo android | apksigner sign -ks ~/.android/debug.keystore --out $APK_NAME_FINAL.apk $APK_NAME_FINAL-unsigned.apk
+rm $APK_NAME_FINAL-unsigned.apk
 
 echo Done
