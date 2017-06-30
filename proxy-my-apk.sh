@@ -25,34 +25,28 @@ fi
 
 APK=$1
 APK_NAME="${APK:0:${#APK}-4}"
-APK_NAME_FINAL=my-$APK_NAME
+APK_NAME_FINAL=$APK_NAME-debug
+LOG_FILE=/usr/local/code/proxy-my-apk/log.txt
 
-echo "*****"
-echo Decompiling $APK into $APK_NAME...
-apktool d -s $APK
+echo "Decompiling $APK into $APK_NAME" >> $LOG_FILE
+/usr/local/bin/apktool d -s $APK -o $APK_NAME
 
-echo "*****"
-echo Editing $APK_NAME/AndroidManifest.xml...
+echo "Editing $APK_NAME/AndroidManifest.xml" >> $LOG_FILE
 sed -i .bak 's/<application /<application android:networkSecurityConfig="@xml\/network_security_config" /' $APK_NAME/AndroidManifest.xml
-rm $APK_NAME/AndroidManifest.xml.bak
 
-echo "*****"
-echo Copying assets/network_security_config.xml into $APK_NAME/res/xml/network_security_config.xml...
-cp assets/network_security_config.xml $APK_NAME/res/xml/network_security_config.xml
+echo "Copying assets/network_security_config.xml into $APK_NAME/res/xml/network_security_config.xml" >> $LOG_FILE
+cp $APK_NAME/../assets/network_security_config.xml $APK_NAME/res/xml/network_security_config.xml
 
-echo "*****"
-echo Recompiling $APK_NAME into $APK_NAME_FINAL-unsigned-unaligned.apk...
-apktool b -d $APK_NAME -o $APK_NAME_FINAL-unsigned-unaligned.apk
+echo "Recompiling $APK_NAME into $APK_NAME_FINAL-unsigned-unaligned.apk" >> $LOG_FILE
+/usr/local/bin/apktool b -d $APK_NAME -o $APK_NAME_FINAL-unsigned-unaligned.apk
 rm -rf $APK_NAME
 
-echo "*****"
-echo Zipaligning $APK_NAME into $APK_NAME_FINAL-unsigned.apk...
-zipalign -v -p 4 $APK_NAME_FINAL-unsigned-unaligned.apk $APK_NAME_FINAL-unsigned.apk
+echo "Zipaligning $APK_NAME into $APK_NAME_FINAL-unsigned.apk" >> $LOG_FILE
+/Users/ecgreb/Library/Android/sdk/build-tools/25.0.3/zipalign -v -p 4 $APK_NAME_FINAL-unsigned-unaligned.apk $APK_NAME_FINAL-unsigned.apk
 rm $APK_NAME_FINAL-unsigned-unaligned.apk
 
-echo "*****"
-echo Signing $APK_NAME into $APK_NAME_FINAL.apk...
-echo android | apksigner sign -ks ~/.android/debug.keystore --out $APK_NAME_FINAL.apk $APK_NAME_FINAL-unsigned.apk
+echo "Signing $APK_NAME into $APK_NAME_FINAL.apk..." >> $LOG_FILE
+echo android | /Users/ecgreb/Library/Android/sdk/build-tools/25.0.3/apksigner sign -ks ~/.android/debug.keystore --out $APK_NAME_FINAL.apk $APK_NAME_FINAL-unsigned.apk
 rm $APK_NAME_FINAL-unsigned.apk
 
-echo Done
+echo Done >> $LOG_FILE
