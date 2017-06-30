@@ -26,7 +26,7 @@ fi
 APK=$1
 APK_NAME="${APK:0:${#APK}-4}"
 APK_NAME_FINAL=$APK_NAME-debug
-LOG_FILE=/usr/local/code/proxy-my-apk/log.txt
+LOG_FILE=/usr/local/code/proxy-my-apk/proxy-my-apk.log
 
 echo "Decompiling $APK into $APK_NAME"
 /usr/local/bin/apktool d -s $APK -o $APK_NAME >> $LOG_FILE
