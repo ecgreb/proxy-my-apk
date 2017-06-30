@@ -23,13 +23,17 @@ if [[ $# -eq 0 ]]; then
     exit 1
 fi
 
+export PATH="$PATH:/usr/local/bin/"
+export PATH="$PATH:/Users/ecgreb/Library/Android/sdk/platform-tools"
+export PATH="$PATH:/Users/ecgreb/Library/Android/sdk/build-tools/25.0.3"
+
 APK=$1
 APK_NAME="${APK:0:${#APK}-4}"
 APK_NAME_FINAL=$APK_NAME-debug
 LOG_FILE=/usr/local/code/proxy-my-apk/proxy-my-apk.log
 
 echo "Decompiling $APK into $APK_NAME"
-/usr/local/bin/apktool d -s $APK -o $APK_NAME >> $LOG_FILE
+apktool d -s $APK -o $APK_NAME >> $LOG_FILE
 
 echo "Editing $APK_NAME/AndroidManifest.xml"
 sed -i .bak 's/<application /<application android:networkSecurityConfig="@xml\/network_security_config" /' $APK_NAME/AndroidManifest.xml >> $LOG_FILE
@@ -38,15 +42,15 @@ echo "Copying assets/network_security_config.xml into $APK_NAME/res/xml/network_
 cp $APK_NAME/../assets/network_security_config.xml $APK_NAME/res/xml/network_security_config.xml >> $LOG_FILE
 
 echo "Recompiling $APK_NAME into $APK_NAME_FINAL-unsigned-unaligned.apk"
-/usr/local/bin/apktool b -d $APK_NAME -o $APK_NAME_FINAL-unsigned-unaligned.apk >> $LOG_FILE
+apktool b -d $APK_NAME -o $APK_NAME_FINAL-unsigned-unaligned.apk >> $LOG_FILE
 rm -rf $APK_NAME
 
 echo "Zipaligning $APK_NAME_FINAL-unsigned-unaligned.apk into $APK_NAME_FINAL-unsigned.apk"
-/Users/ecgreb/Library/Android/sdk/build-tools/25.0.3/zipalign -v -p 4 $APK_NAME_FINAL-unsigned-unaligned.apk $APK_NAME_FINAL-unsigned.apk >> $LOG_FILE
+zipalign -v -p 4 $APK_NAME_FINAL-unsigned-unaligned.apk $APK_NAME_FINAL-unsigned.apk >> $LOG_FILE
 rm $APK_NAME_FINAL-unsigned-unaligned.apk
 
 echo "Signing $APK_NAME_FINAL-unsigned.apk into $APK_NAME_FINAL.apk"
-echo android | /Users/ecgreb/Library/Android/sdk/build-tools/25.0.3/apksigner sign -ks ~/.android/debug.keystore --out $APK_NAME_FINAL.apk $APK_NAME_FINAL-unsigned.apk >> $LOG_FILE
+apksigner sign -ks ~/.android/debug.keystore --out $APK_NAME_FINAL.apk $APK_NAME_FINAL-unsigned.apk >> $LOG_FILE
 rm $APK_NAME_FINAL-unsigned.apk
 
 echo Done
