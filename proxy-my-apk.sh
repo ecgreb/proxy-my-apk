@@ -8,9 +8,6 @@
 # Prerequisites:
 #  * Android SDK https://developer.android.com/studio/
 #  * Apktool https://ibotpeaches.github.io/Apktool/
-#  * Add Android SDK build tools to your executable path (zipalign, apksigner)
-#
-#        export PATH="$PATH:$ANDROID_HOME/build-tools/25.0.3"
 #
 # Usage:
 #   proxy-my-app.sh <app-name-release.apk>
@@ -23,22 +20,26 @@ if [[ $# -eq 0 ]]; then
     exit 1
 fi
 
+CURRENT_TOOLS=`ls /Users/$USER/Library/Android/sdk/build-tools | egrep '^([0-9]+)\.([0-9]+)\.([0-9]+)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$' | sort -rn | head -1`
+
 export PATH="$PATH:/usr/local/bin/"
-export PATH="$PATH:/Users/ecgreb/Library/Android/sdk/platform-tools"
-export PATH="$PATH:/Users/ecgreb/Library/Android/sdk/build-tools/25.0.3"
+export PATH="$PATH:/Users/$USER/Library/Android/sdk/platform-tools"
+export PATH="$PATH:/Users/$USER/Library/Android/sdk/build-tools/$CURRENT_TOOLS"
 
 APK=$1
 APK_NAME="${APK:0:${#APK}-4}"
 APK_NAME_FINAL=$APK_NAME-debug
-LOG_FILE=/usr/local/code/proxy-my-apk/proxy-my-apk.log
+LOG_FILE=./proxy-log.log
 
 echo "Decompiling $APK into $APK_NAME"
+mkdir -p /Users/$USER/Library/apktool/framework >> $LOG_FILE
 apktool d -s $APK -o $APK_NAME >> $LOG_FILE
 
 echo "Editing $APK_NAME/AndroidManifest.xml"
 sed -i .bak 's/<application /<application android:networkSecurityConfig="@xml\/network_security_config" /' $APK_NAME/AndroidManifest.xml >> $LOG_FILE
 
 echo "Copying assets/network_security_config.xml into $APK_NAME/res/xml/network_security_config.xml"
+mkdir -p $APK_NAME/res/xml >> $LOG_FILE
 cp $APK_NAME/../assets/network_security_config.xml $APK_NAME/res/xml/network_security_config.xml >> $LOG_FILE
 
 echo "Recompiling $APK_NAME into $APK_NAME_FINAL-unsigned-unaligned.apk"
@@ -50,7 +51,8 @@ zipalign -v -p 4 $APK_NAME_FINAL-unsigned-unaligned.apk $APK_NAME_FINAL-unsigned
 rm $APK_NAME_FINAL-unsigned-unaligned.apk
 
 echo "Signing $APK_NAME_FINAL-unsigned.apk into $APK_NAME_FINAL.apk"
-apksigner sign -ks ~/.android/debug.keystore --out $APK_NAME_FINAL.apk $APK_NAME_FINAL-unsigned.apk >> $LOG_FILE
+apksigner sign -ks-pass pass:android -ks ~/.android/debug.keystore --out $APK_NAME_FINAL.apk $APK_NAME_FINAL-unsigned.apk >> $LOG_FILE
 rm $APK_NAME_FINAL-unsigned.apk
 
 echo Done
+apktool empty-framework-dir >> $LOG_FILE
